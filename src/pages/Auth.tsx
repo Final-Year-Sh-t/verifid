@@ -1,10 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Mail, Lock, User, ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
@@ -142,160 +138,241 @@ export default function Auth() {
     }
   };
 
+  const toggleMode = () => {
+    setIsSignUp(!isSignUp);
+    setErrors({});
+    setFormData({ fullName: '', email: '', password: '', confirmPassword: '' });
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center gradient-hero p-4">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(220_90%_50%/0.15),transparent_50%)]" />
-      
-      <div className="relative w-full max-w-md animate-scale-in">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-primary-foreground/70 hover:text-primary-foreground mb-6 transition-colors"
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 overflow-hidden">
+      {/* Background shapes */}
+      <div 
+        className={`fixed w-[60vw] h-[60vw] max-w-[800px] max-h-[800px] rounded-full bg-primary/20 blur-3xl transition-all duration-700 ease-in-out ${
+          isSignUp ? 'top-[-20%] right-[-10%]' : 'top-[-20%] left-[-10%]'
+        }`}
+      />
+      <div 
+        className={`fixed w-[40vw] h-[40vw] max-w-[500px] max-h-[500px] rounded-full bg-accent/30 blur-3xl transition-all duration-700 ease-in-out ${
+          isSignUp ? 'bottom-[-15%] left-[-5%]' : 'bottom-[-15%] right-[-5%]'
+        }`}
+      />
+
+      {/* Back to home link */}
+      <Link
+        to="/"
+        className="fixed top-6 left-6 inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors z-50"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to home
+      </Link>
+
+      {/* Main container */}
+      <div className="relative w-full max-w-4xl h-[600px] flex rounded-2xl overflow-hidden shadow-2xl border border-border/50 bg-card">
+        
+        {/* Welcome Section - slides left/right */}
+        <div 
+          className={`absolute inset-y-0 w-1/2 gradient-primary flex items-center justify-center transition-all duration-700 ease-in-out z-20 ${
+            isSignUp ? 'left-0 rounded-r-[100px]' : 'left-1/2 rounded-l-[100px]'
+          }`}
         >
-          <ArrowLeft className="h-4 w-4" />
-          Back to home
-        </Link>
+          <div className="text-center text-primary-foreground px-8">
+            <Shield className="w-16 h-16 mx-auto mb-6 animate-fade-in" />
+            <h2 className="text-4xl font-display font-bold mb-4 animate-fade-in">WELCOME!</h2>
+            <p className="text-primary-foreground/80 animate-fade-in">
+              {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+            </p>
+            <button
+              onClick={toggleMode}
+              className="mt-4 px-8 py-2 border-2 border-primary-foreground/50 rounded-full text-primary-foreground hover:bg-primary-foreground/10 transition-colors animate-fade-in"
+            >
+              {isSignUp ? 'Sign In' : 'Sign Up'}
+            </button>
+          </div>
+        </div>
 
-        <Card className="border-border/50 shadow-lg">
-          <CardHeader className="text-center pb-2">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl gradient-primary">
-              <Shield className="h-7 w-7 text-primary-foreground" />
-            </div>
-            <CardTitle className="font-display text-2xl">
-              {isSignUp ? 'Create an account' : 'Welcome back'}
-            </CardTitle>
-            <CardDescription>
-              {isSignUp
-                ? 'Sign up to start verifying identities'
-                : 'Sign in to your VerifyID account'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {isSignUp && (
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="fullName"
-                      name="fullName"
-                      placeholder="John Doe"
-                      value={formData.fullName}
-                      onChange={handleInputChange}
-                      className="pl-10"
-                    />
-                  </div>
-                  {errors.fullName && (
-                    <p className="text-sm text-destructive">{errors.fullName}</p>
-                  )}
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="pl-10"
-                  />
-                </div>
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="pl-10"
-                  />
-                </div>
-                {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password}</p>
-                )}
-              </div>
-
-              {isSignUp && (
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type="password"
-                      placeholder="••••••••"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      className="pl-10"
-                    />
-                  </div>
-                  {errors.confirmPassword && (
-                    <p className="text-sm text-destructive">{errors.confirmPassword}</p>
-                  )}
-                </div>
-              )}
-
-              <Button
+        {/* Sign In Form */}
+        <div 
+          className={`absolute inset-y-0 left-0 w-1/2 flex items-center justify-center p-8 transition-all duration-700 ease-in-out ${
+            isSignUp ? 'opacity-0 pointer-events-none translate-x-[-50%]' : 'opacity-100 translate-x-0'
+          }`}
+        >
+          <div className="w-full max-w-sm">
+            <h2 className="text-3xl font-display font-bold text-foreground mb-8 text-center">Login</h2>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <FloatingInput
+                id="signin-email"
+                name="email"
+                type="email"
+                label="Email"
+                icon={<Mail className="h-5 w-5" />}
+                value={formData.email}
+                onChange={handleInputChange}
+                error={errors.email}
+              />
+              <FloatingInput
+                id="signin-password"
+                name="password"
+                type="password"
+                label="Password"
+                icon={<Lock className="h-5 w-5" />}
+                value={formData.password}
+                onChange={handleInputChange}
+                error={errors.password}
+              />
+              <button
                 type="submit"
-                className="w-full gradient-primary border-0"
                 disabled={isLoading}
+                className="w-full py-3 gradient-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {isSignUp ? 'Creating account...' : 'Signing in...'}
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Signing in...
                   </>
-                ) : isSignUp ? (
-                  'Create Account'
                 ) : (
-                  'Sign In'
+                  'Login'
                 )}
-              </Button>
+              </button>
             </form>
+            <p className="mt-6 text-center text-muted-foreground md:hidden">
+              Don't have an account?{' '}
+              <button onClick={toggleMode} className="text-primary font-medium hover:underline">
+                Sign Up
+              </button>
+            </p>
+          </div>
+        </div>
 
-            <div className="mt-6 text-center text-sm">
-              {isSignUp ? (
-                <p className="text-muted-foreground">
-                  Already have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => setIsSignUp(false)}
-                    className="text-primary font-medium hover:underline"
-                  >
-                    Sign in
-                  </button>
-                </p>
-              ) : (
-                <p className="text-muted-foreground">
-                  Don't have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => setIsSignUp(true)}
-                    className="text-primary font-medium hover:underline"
-                  >
-                    Sign up
-                  </button>
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Sign Up Form */}
+        <div 
+          className={`absolute inset-y-0 right-0 w-1/2 flex items-center justify-center p-8 transition-all duration-700 ease-in-out ${
+            isSignUp ? 'opacity-100 translate-x-0' : 'opacity-0 pointer-events-none translate-x-[50%]'
+          }`}
+        >
+          <div className="w-full max-w-sm">
+            <h2 className="text-3xl font-display font-bold text-foreground mb-8 text-center">Register</h2>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <FloatingInput
+                id="signup-fullName"
+                name="fullName"
+                type="text"
+                label="Full Name"
+                icon={<User className="h-5 w-5" />}
+                value={formData.fullName}
+                onChange={handleInputChange}
+                error={errors.fullName}
+              />
+              <FloatingInput
+                id="signup-email"
+                name="email"
+                type="email"
+                label="Email"
+                icon={<Mail className="h-5 w-5" />}
+                value={formData.email}
+                onChange={handleInputChange}
+                error={errors.email}
+              />
+              <FloatingInput
+                id="signup-password"
+                name="password"
+                type="password"
+                label="Password"
+                icon={<Lock className="h-5 w-5" />}
+                value={formData.password}
+                onChange={handleInputChange}
+                error={errors.password}
+              />
+              <FloatingInput
+                id="signup-confirmPassword"
+                name="confirmPassword"
+                type="password"
+                label="Confirm Password"
+                icon={<Lock className="h-5 w-5" />}
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                error={errors.confirmPassword}
+              />
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3 gradient-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Creating account...
+                  </>
+                ) : (
+                  'Register'
+                )}
+              </button>
+            </form>
+            <p className="mt-6 text-center text-muted-foreground md:hidden">
+              Already have an account?{' '}
+              <button onClick={toggleMode} className="text-primary font-medium hover:underline">
+                Sign In
+              </button>
+            </p>
+          </div>
+        </div>
       </div>
+    </div>
+  );
+}
+
+// Floating label input component
+interface FloatingInputProps {
+  id: string;
+  name: string;
+  type: string;
+  label: string;
+  icon: React.ReactNode;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  error?: string;
+}
+
+function FloatingInput({ id, name, type, label, icon, value, onChange, error }: FloatingInputProps) {
+  const [isFocused, setIsFocused] = useState(false);
+  const isActive = isFocused || value.length > 0;
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <input
+          id={id}
+          name={name}
+          type={type}
+          value={value}
+          onChange={onChange}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          className={`w-full px-4 py-3 pl-12 bg-muted/50 border rounded-lg outline-none transition-all duration-300 text-foreground ${
+            error 
+              ? 'border-destructive focus:border-destructive' 
+              : 'border-border focus:border-primary'
+          }`}
+        />
+        <label
+          htmlFor={id}
+          className={`absolute left-12 transition-all duration-300 pointer-events-none ${
+            isActive 
+              ? 'top-0 -translate-y-1/2 text-xs bg-card px-1 text-primary' 
+              : 'top-1/2 -translate-y-1/2 text-muted-foreground'
+          }`}
+        >
+          {label}
+        </label>
+        <span className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${
+          isActive ? 'text-primary' : 'text-muted-foreground'
+        }`}>
+          {icon}
+        </span>
+      </div>
+      {error && (
+        <p className="mt-1 text-sm text-destructive">{error}</p>
+      )}
     </div>
   );
 }
