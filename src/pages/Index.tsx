@@ -60,15 +60,15 @@ export default function Index() {
                 </Link>
               ) : (
                 <>
-                  <Link to="/auth?mode=signup">
+                  <Link to="/register">
                     <Button size="lg" className="gradient-primary border-0 gap-2 w-full sm:w-auto">
-                      Get Started Free
+                      Register Institution
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   </Link>
-                  <Link to="/docs">
+                  <Link to="/auth">
                     <Button size="lg" variant="outline" className="border-primary/30 text-primary-foreground hover:bg-primary/10 w-full sm:w-auto">
-                      View Documentation
+                      Sign In
                     </Button>
                   </Link>
                 </>
@@ -176,9 +176,9 @@ export default function Index() {
                 </Button>
               </Link>
             ) : (
-              <Link to="/auth?mode=signup">
+              <Link to="/register">
                 <Button size="lg" className="gradient-accent border-0 gap-2">
-                  Create Free Account
+                  Register Your Institution
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
