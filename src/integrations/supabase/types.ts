@@ -72,33 +72,45 @@ export type Database = {
       }
       institutions: {
         Row: {
+          allow_public_verification: boolean | null
           created_at: string
+          custom_fields: Json | null
+          enforce_expiry: boolean | null
           id: string
           logo_url: string | null
           name: string
           primary_color: string | null
+          require_photo: boolean | null
           secondary_color: string | null
           slug: string
           updated_at: string
           welcome_text: string | null
         }
         Insert: {
+          allow_public_verification?: boolean | null
           created_at?: string
+          custom_fields?: Json | null
+          enforce_expiry?: boolean | null
           id?: string
           logo_url?: string | null
           name: string
           primary_color?: string | null
+          require_photo?: boolean | null
           secondary_color?: string | null
           slug: string
           updated_at?: string
           welcome_text?: string | null
         }
         Update: {
+          allow_public_verification?: boolean | null
           created_at?: string
+          custom_fields?: Json | null
+          enforce_expiry?: boolean | null
           id?: string
           logo_url?: string | null
           name?: string
           primary_color?: string | null
+          require_photo?: boolean | null
           secondary_color?: string | null
           slug?: string
           updated_at?: string
@@ -150,6 +162,7 @@ export type Database = {
           id: string
           institution_id: string | null
           role: Database["public"]["Enums"]["app_role"]
+          staff_type: Database["public"]["Enums"]["staff_role"] | null
           user_id: string
         }
         Insert: {
@@ -157,6 +170,7 @@ export type Database = {
           id?: string
           institution_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          staff_type?: Database["public"]["Enums"]["staff_role"] | null
           user_id: string
         }
         Update: {
@@ -164,6 +178,7 @@ export type Database = {
           id?: string
           institution_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          staff_type?: Database["public"]["Enums"]["staff_role"] | null
           user_id?: string
         }
         Relationships: [
@@ -234,6 +249,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "super_admin"
+      staff_role: "verifier" | "registrar" | "security" | "viewer"
       verification_status: "pending" | "verified" | "rejected" | "expired"
     }
     CompositeTypes: {
@@ -363,6 +379,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "super_admin"],
+      staff_role: ["verifier", "registrar", "security", "viewer"],
       verification_status: ["pending", "verified", "rejected", "expired"],
     },
   },
