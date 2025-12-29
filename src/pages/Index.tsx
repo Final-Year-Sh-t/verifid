@@ -48,7 +48,7 @@ export default function Index() {
               Made Simple
             </h1>
             <p className="text-lg text-primary-foreground/70 mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-              Securely verify identities using index numbers. Fast, reliable, and compliant with the highest security standards.
+              Securely verify identities using identification numbers. Fast, reliable, and compliant with the highest security standards.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style={{ animationDelay: '0.3s' }}>
               {user ? (
@@ -136,7 +136,7 @@ export default function Index() {
           <div className="mx-auto max-w-3xl">
             {[
               { step: '01', title: 'Sign In', description: 'Create an account or sign in to access the verification portal.' },
-              { step: '02', title: 'Enter Index Number', description: 'Input the unique index number you want to verify.' },
+              { step: '02', title: 'Enter Identification Number', description: 'Input the unique identification number you want to verify.' },
               { step: '03', title: 'Get Results', description: 'Instantly receive verified identity information including name, photo, and organization.' },
             ].map((item, index) => (
               <div

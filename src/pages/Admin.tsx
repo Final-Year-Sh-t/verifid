@@ -316,7 +316,7 @@ export default function Admin() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="index_number">Index Number</Label>
+                    <Label htmlFor="index_number">Identification Number</Label>
                     <Input
                       id="index_number"
                       placeholder="ID-2024-001"
