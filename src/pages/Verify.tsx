@@ -24,7 +24,7 @@ interface VerificationResult {
 }
 
 export default function Verify() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, institutionId, isLoading: authLoading } = useAuth();
   const [indexNumber, setIndexNumber] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [result, setResult] = useState<VerificationResult | null>(null);
@@ -84,6 +84,7 @@ export default function Verify() {
         verified_by: user.id,
         verification_result: data !== null,
         user_agent: navigator.userAgent,
+        institution_id: institutionId,
       });
 
       setResult({

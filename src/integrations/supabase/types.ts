@@ -22,6 +22,7 @@ export type Database = {
           full_name: string
           id: string
           index_number: string
+          institution_id: string | null
           issued_at: string
           metadata: Json | null
           organization: string
@@ -36,6 +37,7 @@ export type Database = {
           full_name: string
           id?: string
           index_number: string
+          institution_id?: string | null
           issued_at: string
           metadata?: Json | null
           organization: string
@@ -50,12 +52,57 @@ export type Database = {
           full_name?: string
           id?: string
           index_number?: string
+          institution_id?: string | null
           issued_at?: string
           metadata?: Json | null
           organization?: string
           photo_url?: string | null
           status?: Database["public"]["Enums"]["verification_status"]
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "index_records_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institutions: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          primary_color: string | null
+          secondary_color: string | null
+          slug: string
+          updated_at: string
+          welcome_text: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          primary_color?: string | null
+          secondary_color?: string | null
+          slug: string
+          updated_at?: string
+          welcome_text?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          primary_color?: string | null
+          secondary_color?: string | null
+          slug?: string
+          updated_at?: string
+          welcome_text?: string | null
         }
         Relationships: []
       }
@@ -65,6 +112,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          institution_id: string | null
           updated_at: string
           user_id: string
         }
@@ -73,6 +121,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          institution_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -81,37 +130,58 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          institution_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
           created_at: string
           id: string
+          institution_id: string | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          institution_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          institution_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       verification_logs: {
         Row: {
           created_at: string
           id: string
           index_number: string
+          institution_id: string | null
           ip_address: string | null
           user_agent: string | null
           verification_result: boolean
@@ -121,6 +191,7 @@ export type Database = {
           created_at?: string
           id?: string
           index_number: string
+          institution_id?: string | null
           ip_address?: string | null
           user_agent?: string | null
           verification_result: boolean
@@ -130,18 +201,28 @@ export type Database = {
           created_at?: string
           id?: string
           index_number?: string
+          institution_id?: string | null
           ip_address?: string | null
           user_agent?: string | null
           verification_result?: boolean
           verified_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "verification_logs_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      get_user_institution: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -149,9 +230,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "super_admin"
       verification_status: "pending" | "verified" | "rejected" | "expired"
     }
     CompositeTypes: {
@@ -280,7 +362,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "super_admin"],
       verification_status: ["pending", "verified", "rejected", "expired"],
     },
   },

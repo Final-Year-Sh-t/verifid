@@ -50,7 +50,7 @@ interface VerificationLog {
 type RecordStatus = 'pending' | 'verified' | 'rejected' | 'expired';
 
 export default function Admin() {
-  const { user, isAdmin, isLoading: authLoading } = useAuth();
+  const { user, isAdmin, institutionId, isLoading: authLoading } = useAuth();
   const [records, setRecords] = useState<IndexRecord[]>([]);
   const [logs, setLogs] = useState<VerificationLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -157,6 +157,7 @@ export default function Admin() {
             expires_at: formData.expires_at,
             status: formData.status,
             created_by: user?.id,
+            institution_id: institutionId,
           });
 
         if (error) throw error;
