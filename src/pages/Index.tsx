@@ -67,7 +67,7 @@ export default function Index() {
                     </Button>
                   </Link>
                   <Link to="/auth">
-                    <Button size="lg" variant="outline" className="border-primary/30 text-primary-foreground hover:bg-primary/10 w-full sm:w-auto">
+                    <Button size="lg" variant="outline" className="border-white/30 bg-white/10 text-white hover:bg-white/20 w-full sm:w-auto">
                       Sign In
                     </Button>
                   </Link>
