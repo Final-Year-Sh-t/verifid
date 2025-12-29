@@ -56,12 +56,12 @@ If you've forgotten your password, contact your system administrator.`
         content: `To verify someone's identity:
 
 1. Navigate to the "Verify" page after signing in
-2. Enter the index number in the search field (e.g., ID-2024-001)
+2. Enter the identification number in the search field (e.g., ID-2024-001)
 3. Click "Verify" to search
 
 The system will display the verification result:
 - **Found**: The identity is verified with full details including name, photo, organization, and validity dates
-- **Not Found**: No record matches the index number
+- **Not Found**: No record matches the identification number
 
 All verification attempts are logged for audit purposes.`
       },
@@ -105,7 +105,7 @@ Contact your system administrator if you need admin access.`
 
 1. Click "Add Record" in the admin dashboard
 2. Fill in the required fields:
-   - Index Number (unique identifier)
+   - Identification Number (unique identifier)
    - Full Name
    - Organization
    - Issue Date
@@ -120,7 +120,7 @@ Records must be set to "Verified" status to appear in search results.`
         title: 'Verification Logs',
         content: `The verification logs tab shows all verification attempts:
 
-- Index number searched
+- Identification number searched
 - Who performed the verification
 - Whether a record was found
 - Date and time
@@ -164,12 +164,12 @@ If you suspect unauthorized access to your account, contact support immediately.
 
 const faqs = [
   {
-    question: 'What is an index number?',
-    answer: 'An index number is a unique identifier assigned to each person in the verification system. It typically follows a format like ID-YYYY-NNN where YYYY is the year and NNN is a sequential number.',
+    question: 'What is an identification number?',
+    answer: 'An identification number is a unique identifier assigned to each person in the verification system. It typically follows a format like ID-YYYY-NNN where YYYY is the year and NNN is a sequential number.',
   },
   {
     question: 'What if I can\'t find a record?',
-    answer: 'If a record isn\'t found, it could mean: the index number is incorrect, the record doesn\'t exist in the system, or the record status is not "verified". Double-check the index number and try again.',
+    answer: 'If a record isn\'t found, it could mean: the identification number is incorrect, the record doesn\'t exist in the system, or the record status is not "verified". Double-check the identification number and try again.',
   },
   {
     question: 'How long are records valid?',

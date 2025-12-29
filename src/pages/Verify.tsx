@@ -49,8 +49,8 @@ export default function Verify() {
     
     if (!indexNumber.trim()) {
       toast({
-        title: 'Index number required',
-        description: 'Please enter an index number to verify.',
+        title: 'Identification number required',
+        description: 'Please enter an identification number to verify.',
         variant: 'destructive',
       });
       return;
@@ -114,7 +114,7 @@ export default function Verify() {
               Verify Identity
             </h1>
             <p className="text-muted-foreground">
-              Enter an index number to verify someone's identity.
+              Enter an identification number to verify someone's identity.
             </p>
           </div>
 
@@ -124,7 +124,7 @@ export default function Verify() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Enter index number (e.g., ID-2024-001)"
+                    placeholder="Enter identification number (e.g., ID-2024-001)"
                     value={indexNumber}
                     onChange={(e) => setIndexNumber(e.target.value.toUpperCase())}
                     className="pl-10 uppercase"
@@ -162,7 +162,7 @@ export default function Verify() {
                       </div>
                       <div>
                         <CardTitle className="text-lg font-display">Not Found</CardTitle>
-                        <CardDescription>No verified record matches this index number</CardDescription>
+                        <CardDescription>No verified record matches this identification number</CardDescription>
                       </div>
                     </>
                   )}
@@ -238,7 +238,7 @@ export default function Verify() {
           {!result && (
             <div className="text-center text-muted-foreground py-12">
               <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Enter an index number above to verify an identity</p>
+              <p>Enter an identification number above to verify an identity</p>
             </div>
           )}
         </div>
