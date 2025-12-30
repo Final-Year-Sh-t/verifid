@@ -53,6 +53,14 @@ interface DashboardStats {
   }>;
 }
 
+interface UserInstitution {
+  institution_id: string;
+  institution_name: string;
+  institution_slug: string;
+  role: string;
+  is_active: boolean;
+}
+
 type OnboardingStep = 'choice' | 'create' | 'join';
 
 export default function Dashboard() {
@@ -73,15 +81,35 @@ export default function Dashboard() {
   const [showInstitutionModal, setShowInstitutionModal] = useState(false);
   const [showConfirmSwitch, setShowConfirmSwitch] = useState(false);
   const [pendingAction, setPendingAction] = useState<'create' | 'join' | null>(null);
+  
+  // User institutions list
+  const [userInstitutions, setUserInstitutions] = useState<UserInstitution[]>([]);
+  const [isSwitching, setIsSwitching] = useState(false);
 
   useEffect(() => {
-    if (user && institutionId) {
-      setIsLoading(true);
-      fetchDashboardStats();
-    } else {
-      setIsLoading(false);
+    if (user) {
+      fetchUserInstitutions();
+      if (institutionId) {
+        setIsLoading(true);
+        fetchDashboardStats();
+      } else {
+        setIsLoading(false);
+      }
     }
   }, [user, institutionId]);
+
+  const fetchUserInstitutions = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase.rpc('get_user_institutions', {
+        _user_id: user.id
+      });
+      if (error) throw error;
+      setUserInstitutions(data || []);
+    } catch (err) {
+      console.error('Error fetching user institutions:', err);
+    }
+  };
 
   const fetchDashboardStats = async () => {
     try {
@@ -140,6 +168,7 @@ export default function Dashboard() {
       });
 
       await refreshAuth();
+      await fetchUserInstitutions();
       setInstitutionName('');
       setOnboardingStep('choice');
       setShowInstitutionModal(false);
@@ -209,6 +238,7 @@ export default function Dashboard() {
       });
 
       await refreshAuth();
+      await fetchUserInstitutions();
       setJoinCode('');
       setSearchResults([]);
       setSelectedInstitution(null);
@@ -223,6 +253,36 @@ export default function Dashboard() {
       });
     } finally {
       setIsOnboardingLoading(false);
+    }
+  };
+
+  const handleSwitchInstitution = async (instId: string) => {
+    if (!user || instId === institutionId) return;
+    
+    setIsSwitching(true);
+    try {
+      const { error } = await supabase.rpc('switch_active_institution', {
+        _institution_id: instId,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Switched institution',
+        description: 'You are now viewing a different institution.',
+      });
+      
+      await refreshAuth();
+      await fetchUserInstitutions();
+    } catch (error: any) {
+      console.error('Switch error:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to switch institution.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSwitching(false);
     }
   };
 
@@ -564,41 +624,96 @@ export default function Dashboard() {
           {/* Institution Management */}
           <div className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
             <h2 className="font-display text-lg font-semibold mb-4">Institution</h2>
-            <Card>
-              <CardContent className="p-4 md:p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
-                      <Building2 className="h-5 w-5 md:h-6 md:w-6" />
+            <div className="space-y-3">
+              {/* Current Institution */}
+              <Card className="border-primary/30 bg-primary/5">
+                <CardContent className="p-4 md:p-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shrink-0">
+                        <Building2 className="h-5 w-5 md:h-6 md:w-6" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium">{institution?.name || 'Unknown'}</h3>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground font-medium">
+                            Active
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground font-mono">{institution?.slug || ''}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-medium">{institution?.name || 'Unknown'}</h3>
-                      <p className="text-xs text-muted-foreground font-mono">{institution?.slug || ''}</p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenSwitchModal('join')}
+                        className="gap-1.5"
+                      >
+                        <Users className="h-3.5 w-3.5" />
+                        Join Another
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenSwitchModal('create')}
+                        className="gap-1.5"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Create New
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleOpenSwitchModal('join')}
-                      className="gap-1.5"
-                    >
-                      <RefreshCw className="h-3.5 w-3.5" />
-                      Switch
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleOpenSwitchModal('create')}
-                      className="gap-1.5"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      Create New
-                    </Button>
-                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Other Institutions */}
+              {userInstitutions.filter(inst => !inst.is_active).length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Other Memberships</p>
+                  {userInstitutions
+                    .filter(inst => !inst.is_active)
+                    .map((inst) => (
+                      <Card 
+                        key={inst.institution_id} 
+                        className="cursor-pointer hover:border-primary/50 transition-colors group"
+                        onClick={() => handleSwitchInstitution(inst.institution_id)}
+                      >
+                        <CardContent className="p-3 md:p-4 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground shrink-0 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                              <Building2 className="h-4 w-4 md:h-5 md:w-5" />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-sm">{inst.institution_name}</h4>
+                              <p className="text-xs text-muted-foreground">
+                                <span className="font-mono">{inst.institution_slug}</span>
+                                <span className="mx-1">•</span>
+                                <span className="capitalize">{inst.role}</span>
+                              </p>
+                            </div>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            disabled={isSwitching}
+                            className="gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            {isSwitching ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <>
+                                <RefreshCw className="h-3.5 w-3.5" />
+                                Switch
+                              </>
+                            )}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
                 </div>
-              </CardContent>
-            </Card>
+              )}
+            </div>
           </div>
 
           {/* Recent Activity */}

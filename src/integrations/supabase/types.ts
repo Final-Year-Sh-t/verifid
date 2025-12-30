@@ -161,6 +161,7 @@ export type Database = {
           created_at: string
           id: string
           institution_id: string | null
+          is_active: boolean
           role: Database["public"]["Enums"]["app_role"]
           staff_type: Database["public"]["Enums"]["staff_role"] | null
           user_id: string
@@ -169,6 +170,7 @@ export type Database = {
           created_at?: string
           id?: string
           institution_id?: string | null
+          is_active?: boolean
           role?: Database["public"]["Enums"]["app_role"]
           staff_type?: Database["public"]["Enums"]["staff_role"] | null
           user_id: string
@@ -177,6 +179,7 @@ export type Database = {
           created_at?: string
           id?: string
           institution_id?: string | null
+          is_active?: boolean
           role?: Database["public"]["Enums"]["app_role"]
           staff_type?: Database["public"]["Enums"]["staff_role"] | null
           user_id?: string
@@ -242,6 +245,16 @@ export type Database = {
         Returns: string
       }
       get_user_institution: { Args: { _user_id: string }; Returns: string }
+      get_user_institutions: {
+        Args: { _user_id: string }
+        Returns: {
+          institution_id: string
+          institution_name: string
+          institution_slug: string
+          is_active: boolean
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -251,6 +264,10 @@ export type Database = {
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       join_institution_for_current_user: {
+        Args: { _institution_id: string }
+        Returns: undefined
+      }
+      switch_active_institution: {
         Args: { _institution_id: string }
         Returns: undefined
       }
