@@ -24,7 +24,9 @@ import {
   Trash2,
   CheckCircle2,
   XCircle,
-  Clock
+  Clock,
+  Shield,
+  UserCog
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -48,16 +50,26 @@ interface VerificationLog {
   profiles?: { full_name: string | null } | null;
 }
 
+interface Member {
+  id: string;
+  user_id: string;
+  role: 'admin' | 'user' | 'super_admin';
+  staff_type: string | null;
+  profiles: { full_name: string | null; avatar_url: string | null } | null;
+}
+
 type RecordStatus = 'pending' | 'verified' | 'rejected' | 'expired';
 
 export default function Admin() {
   const { user, isAdmin, institutionId, isLoading: authLoading } = useAuth();
   const [records, setRecords] = useState<IndexRecord[]>([]);
   const [logs, setLogs] = useState<VerificationLog[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<IndexRecord | null>(null);
+  const [isUpdatingRole, setIsUpdatingRole] = useState<string | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState<{
@@ -114,6 +126,34 @@ export default function Admin() {
         profiles: null,
       }));
       setLogs(mappedLogs);
+
+      // Fetch members of this institution
+      if (institutionId) {
+        const { data: membersData, error: membersError } = await supabase
+          .from('user_roles')
+          .select(`
+            id,
+            user_id,
+            role,
+            staff_type,
+            profiles!user_roles_user_id_fkey (full_name, avatar_url)
+          `)
+          .eq('institution_id', institutionId);
+
+        if (membersError) {
+          console.error('Error fetching members:', membersError);
+        } else {
+          // Transform the data to match our interface
+          const transformedMembers: Member[] = (membersData || []).map((m: any) => ({
+            id: m.id,
+            user_id: m.user_id,
+            role: m.role,
+            staff_type: m.staff_type,
+            profiles: Array.isArray(m.profiles) ? m.profiles[0] : m.profiles,
+          }));
+          setMembers(transformedMembers);
+        }
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -210,6 +250,41 @@ export default function Admin() {
         description: error.message || 'Failed to delete record.',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleUpdateRole = async (memberId: string, userId: string, newRole: 'admin' | 'user') => {
+    if (userId === user?.id) {
+      toast({
+        title: 'Cannot change your own role',
+        description: 'You cannot modify your own admin status.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsUpdatingRole(memberId);
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .update({ role: newRole })
+        .eq('id', memberId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Role updated',
+        description: `Member has been ${newRole === 'admin' ? 'promoted to admin' : 'set as regular member'}.`,
+      });
+      fetchData();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update role.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUpdatingRole(null);
     }
   };
 
@@ -463,9 +538,13 @@ export default function Admin() {
               <FileCheck className="h-4 w-4" />
               Records
             </TabsTrigger>
+            <TabsTrigger value="members" className="gap-2">
+              <UserCog className="h-4 w-4" />
+              Members
+            </TabsTrigger>
             <TabsTrigger value="logs" className="gap-2">
               <Activity className="h-4 w-4" />
-              Verification Logs
+              Logs
             </TabsTrigger>
           </TabsList>
 
@@ -528,6 +607,95 @@ export default function Admin() {
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                               </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="members">
+            <Card>
+              <CardHeader>
+                <CardTitle>Institution Members</CardTitle>
+                <CardDescription>Manage members and their roles. Only members of your institution are shown.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : members.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No members found</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Role</TableHead>
+                          <TableHead>Staff Type</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {members.map((member) => (
+                          <TableRow key={member.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                  {member.profiles?.full_name?.[0]?.toUpperCase() || 'U'}
+                                </div>
+                                <span>{member.profiles?.full_name || 'Unknown'}</span>
+                                {member.user_id === user?.id && (
+                                  <Badge variant="outline" className="text-xs">You</Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {member.role === 'admin' || member.role === 'super_admin' ? (
+                                <Badge className="gap-1 bg-primary">
+                                  <Shield className="h-3 w-3" />
+                                  Admin
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary">Member</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {member.staff_type ? (
+                                <Badge variant="outline" className="capitalize">{member.staff_type}</Badge>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {member.user_id !== user?.id && member.role !== 'super_admin' && (
+                                <Select
+                                  value={member.role}
+                                  onValueChange={(value: 'admin' | 'user') => handleUpdateRole(member.id, member.user_id, value)}
+                                  disabled={isUpdatingRole === member.id}
+                                >
+                                  <SelectTrigger className="w-32">
+                                    {isUpdatingRole === member.id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <SelectValue />
+                                    )}
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="user">Member</SelectItem>
+                                    <SelectItem value="admin">Admin</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}
