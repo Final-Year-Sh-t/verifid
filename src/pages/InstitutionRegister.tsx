@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,9 +19,9 @@ const registrationSchema = z.object({
 export default function InstitutionRegister() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, refreshAuth } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [institutionId, setInstitutionId] = useState<string | null>(null);
+  const [pendingInstitutionName, setPendingInstitutionName] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   const [formData, setFormData] = useState({
@@ -29,6 +30,41 @@ export default function InstitutionRegister() {
     email: '',
     password: '',
   });
+
+  // After signup, user becomes available. Then create institution.
+  useEffect(() => {
+    const createInstitutionAfterSignup = async () => {
+      if (user && pendingInstitutionName) {
+        try {
+          const { error } = await supabase.rpc('create_institution_for_current_user', {
+            _name: pendingInstitutionName,
+          });
+
+          if (error) throw error;
+
+          toast({
+            title: 'Institution created!',
+            description: 'Welcome to your new institution.',
+          });
+
+          await refreshAuth();
+          setPendingInstitutionName(null);
+          navigate('/dashboard');
+        } catch (error: any) {
+          console.error('Institution creation error:', error);
+          toast({
+            title: 'Error creating institution',
+            description: error.message || 'Failed to create institution.',
+            variant: 'destructive',
+          });
+          setPendingInstitutionName(null);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    createInstitutionAfterSignup();
+  }, [user, pendingInstitutionName, navigate, refreshAuth, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +87,7 @@ export default function InstitutionRegister() {
 
     try {
       // Step 1: Create the user account
-      const redirectUrl = `${window.location.origin}/auth`;
+      const redirectUrl = `${window.location.origin}/dashboard`;
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email.trim(),
         password: formData.password,
@@ -69,6 +105,7 @@ export default function InstitutionRegister() {
         } else {
           throw authError;
         }
+        setIsLoading(false);
         return;
       }
 
@@ -76,67 +113,8 @@ export default function InstitutionRegister() {
         throw new Error('Failed to create user account');
       }
 
-      // Step 2: Create the institution
-      const slug = formData.institutionName
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '');
-
-      const { data: institution, error: instError } = await supabase
-        .from('institutions')
-        .insert({
-          name: formData.institutionName.trim(),
-          slug: `${slug}-${Date.now().toString(36)}`, // Ensure unique slug
-          welcome_text: `Welcome to ${formData.institutionName.trim()} verification portal`,
-        })
-        .select('id')
-        .single();
-
-      if (instError) {
-        console.error('Institution creation error:', instError);
-        throw new Error('Failed to create institution. Please try again.');
-      }
-
-      // Step 3: Update the user's role to admin with institution_id
-      // The trigger already created a 'user' role, so we update it
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .update({ 
-          role: 'admin' as const,
-          institution_id: institution.id 
-        })
-        .eq('user_id', authData.user.id);
-
-      if (roleError) {
-        console.error('Role update error:', roleError);
-        // Try inserting instead if update fails
-        const { error: insertError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: authData.user.id,
-            role: 'admin' as const,
-            institution_id: institution.id,
-          });
-        
-        if (insertError) {
-          console.error('Role insert error:', insertError);
-        }
-      }
-
-      // Step 4: Update profile with institution_id
-      await supabase
-        .from('profiles')
-        .update({ institution_id: institution.id })
-        .eq('user_id', authData.user.id);
-
-      setInstitutionId(institution.id);
-      setIsSuccess(true);
-      
-      toast({
-        title: 'Registration successful!',
-        description: 'Your institution has been created.',
-      });
+      // Store institution name; the useEffect above will create the institution once user is set
+      setPendingInstitutionName(formData.institutionName.trim());
 
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -145,40 +123,21 @@ export default function InstitutionRegister() {
         description: error.message || 'An error occurred during registration.',
         variant: 'destructive',
       });
-    } finally {
       setIsLoading(false);
     }
   };
 
-  if (isSuccess) {
+  // Loading state while creating institution after signup
+  if (isLoading && pendingInstitutionName) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-secondary/20 p-4">
         <div className="w-full max-w-md">
-          <div className="bg-card rounded-2xl shadow-xl border border-border p-8 text-center animate-scale-in">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success/20 mx-auto mb-6">
-              <CheckCircle2 className="h-8 w-8 text-success" />
-            </div>
-            <h1 className="font-display text-2xl font-bold mb-2">Welcome Aboard!</h1>
-            <p className="text-muted-foreground mb-6">
-              Your institution has been successfully registered.
+          <div className="bg-card rounded-2xl shadow-xl border border-border p-8 text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-6" />
+            <h1 className="font-display text-2xl font-bold mb-2">Setting Up Your Institution</h1>
+            <p className="text-muted-foreground">
+              Creating your institution and configuring your admin account...
             </p>
-            
-            <div className="bg-secondary/50 rounded-lg p-4 mb-6">
-              <div className="text-sm text-muted-foreground mb-1">Your Institution ID</div>
-              <div className="font-mono text-sm font-medium break-all">{institutionId}</div>
-            </div>
-
-            <div className="space-y-3">
-              <Button 
-                onClick={() => navigate('/auth')} 
-                className="w-full gradient-primary border-0"
-              >
-                Sign In to Dashboard
-              </Button>
-              <p className="text-sm text-muted-foreground">
-                You can now sign in with your email and password to access your admin dashboard.
-              </p>
-            </div>
           </div>
         </div>
       </div>
