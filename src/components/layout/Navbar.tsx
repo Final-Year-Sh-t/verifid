@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
-import { Shield, FileText, Search, Settings, LogOut, Menu, X, Building2, Cog } from 'lucide-react';
+import { Shield, FileText, Search, Settings, LogOut, Menu, X, Building2, Cog, LayoutDashboard } from 'lucide-react';
 import { useState } from 'react';
 
 export function Navbar() {
@@ -16,6 +16,7 @@ export function Navbar() {
   };
 
   const navLinks = [
+    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, requiresAuth: true },
     { to: '/verify', label: 'Verify', icon: Search, requiresAuth: true },
     { to: '/docs', label: 'Documentation', icon: FileText, requiresAuth: false },
     ...(isAdmin ? [

@@ -38,7 +38,7 @@ export default function Auth() {
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate('/dashboard');
     }
   }, [user, navigate]);
 
@@ -88,7 +88,7 @@ export default function Auth() {
             title: 'Account created!',
             description: 'Welcome to VerifyID. You can now start verifying identities.',
           });
-          navigate('/');
+          navigate('/dashboard');
         }
       } else {
         const result = signInSchema.safeParse(formData);
@@ -124,7 +124,7 @@ export default function Auth() {
             title: 'Welcome back!',
             description: 'You have successfully signed in.',
           });
-          navigate('/');
+          navigate('/dashboard');
         }
       }
     } catch (err) {

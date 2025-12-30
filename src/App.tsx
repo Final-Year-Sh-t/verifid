@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import InstitutionRegister from "./pages/InstitutionRegister";
 import Verify from "./pages/Verify";
+import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import SuperAdmin from "./pages/SuperAdmin";
 import InstitutionSettings from "./pages/InstitutionSettings";
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/register" element={<InstitutionRegister />} />
             <Route path="/verify" element={<Verify />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/settings" element={<InstitutionSettings />} />
             <Route path="/super-admin" element={<SuperAdmin />} />
