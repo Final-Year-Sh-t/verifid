@@ -237,6 +237,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_institution_for_current_user: {
+        Args: { _name: string }
+        Returns: string
+      }
       get_user_institution: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -246,6 +250,10 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      join_institution_for_current_user: {
+        Args: { _institution_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "super_admin"

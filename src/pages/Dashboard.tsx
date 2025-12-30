@@ -53,6 +53,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user && institutionId) {
+      setIsLoading(true);
       fetchDashboardStats();
     } else {
       setIsLoading(false);
@@ -103,46 +104,12 @@ export default function Dashboard() {
 
     setIsOnboardingLoading(true);
     try {
-      const slug = institutionName
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '');
+      const { data: newInstitutionId, error } = await supabase.rpc(
+        'create_institution_for_current_user',
+        { _name: institutionName.trim() }
+      );
 
-      const { data: newInstitution, error: instError } = await supabase
-        .from('institutions')
-        .insert({
-          name: institutionName.trim(),
-          slug: `${slug}-${Date.now().toString(36)}`,
-          welcome_text: `Welcome to ${institutionName.trim()} verification portal`,
-        })
-        .select('id')
-        .single();
-
-      if (instError) throw instError;
-
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .update({ 
-          role: 'admin' as const,
-          institution_id: newInstitution.id 
-        })
-        .eq('user_id', user.id);
-
-      if (roleError) {
-        await supabase
-          .from('user_roles')
-          .insert({
-            user_id: user.id,
-            role: 'admin' as const,
-            institution_id: newInstitution.id,
-          });
-      }
-
-      await supabase
-        .from('profiles')
-        .update({ institution_id: newInstitution.id })
-        .eq('user_id', user.id);
+      if (error) throw error;
 
       toast({
         title: 'Institution created!',
@@ -150,6 +117,13 @@ export default function Dashboard() {
       });
 
       await refreshAuth();
+      setInstitutionName('');
+      setOnboardingStep('choice');
+
+      // If something is still off, keep a visible hint in console
+      if (!newInstitutionId) {
+        console.warn('Institution created but no id returned from RPC');
+      }
     } catch (error: any) {
       console.error('Create institution error:', error);
       toast({
@@ -199,25 +173,11 @@ export default function Dashboard() {
 
     setIsOnboardingLoading(true);
     try {
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .update({ institution_id: selectedInstitution })
-        .eq('user_id', user.id);
+      const { error } = await supabase.rpc('join_institution_for_current_user', {
+        _institution_id: selectedInstitution,
+      });
 
-      if (roleError) {
-        await supabase
-          .from('user_roles')
-          .insert({
-            user_id: user.id,
-            role: 'user' as const,
-            institution_id: selectedInstitution,
-          });
-      }
-
-      await supabase
-        .from('profiles')
-        .update({ institution_id: selectedInstitution })
-        .eq('user_id', user.id);
+      if (error) throw error;
 
       toast({
         title: 'Joined successfully!',
@@ -225,6 +185,10 @@ export default function Dashboard() {
       });
 
       await refreshAuth();
+      setJoinCode('');
+      setSearchResults([]);
+      setSelectedInstitution(null);
+      setOnboardingStep('choice');
     } catch (error: any) {
       console.error('Join error:', error);
       toast({
