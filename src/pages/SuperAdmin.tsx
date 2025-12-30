@@ -20,7 +20,9 @@ import {
   Trash2,
   XCircle,
   UserPlus,
-  Palette
+  Palette,
+  Shield,
+  Crown
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -43,14 +45,24 @@ interface InstitutionAdmin {
   institutions?: { name: string } | null;
 }
 
+interface SuperAdminUser {
+  id: string;
+  user_id: string;
+  profile?: { full_name: string | null; user_id: string } | null;
+}
+
 export default function SuperAdmin() {
   const { user, isSuperAdmin, isLoading: authLoading } = useAuth();
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [admins, setAdmins] = useState<InstitutionAdmin[]>([]);
+  const [superAdmins, setSuperAdmins] = useState<SuperAdminUser[]>([]);
+  const [allProfiles, setAllProfiles] = useState<{ user_id: string; full_name: string | null }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
+  const [isSuperAdminDialogOpen, setIsSuperAdminDialogOpen] = useState(false);
   const [editingInstitution, setEditingInstitution] = useState<Institution | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState('');
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -100,6 +112,43 @@ export default function SuperAdmin() {
         profiles: null,
         institutions: null,
       })) || []);
+
+      // Fetch super admins
+      const { data: superAdminsData, error: superAdminsError } = await supabase
+        .from('user_roles')
+        .select('id, user_id')
+        .eq('role', 'super_admin');
+
+      if (superAdminsError) throw superAdminsError;
+      
+      // Fetch profiles for super admins
+      const superAdminUserIds = superAdminsData?.map(sa => sa.user_id) || [];
+      let profilesMap: Record<string, { full_name: string | null; user_id: string }> = {};
+      
+      if (superAdminUserIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .in('user_id', superAdminUserIds);
+        
+        profilesData?.forEach(p => {
+          profilesMap[p.user_id] = p;
+        });
+      }
+
+      setSuperAdmins(superAdminsData?.map(sa => ({
+        id: sa.id,
+        user_id: sa.user_id,
+        profile: profilesMap[sa.user_id] || null,
+      })) || []);
+
+      // Fetch all profiles for the dropdown
+      const { data: allProfilesData } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .order('full_name', { ascending: true });
+      
+      setAllProfiles(allProfilesData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -192,6 +241,89 @@ export default function SuperAdmin() {
     }
   };
 
+  const handleAddSuperAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedUserId) {
+      toast({
+        title: 'Error',
+        description: 'Please select a user.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      // Check if user already has super_admin role
+      const { data: existingRole } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', selectedUserId)
+        .eq('role', 'super_admin')
+        .maybeSingle();
+
+      if (existingRole) {
+        toast({
+          title: 'Info',
+          description: 'This user is already a super admin.',
+        });
+        return;
+      }
+
+      // Insert super_admin role
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: selectedUserId,
+          role: 'super_admin',
+        });
+
+      if (error) throw error;
+
+      toast({ title: 'Super admin added successfully' });
+      setIsSuperAdminDialogOpen(false);
+      setSelectedUserId('');
+      fetchData();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to add super admin.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRemoveSuperAdmin = async (roleId: string, userId: string) => {
+    if (userId === user?.id) {
+      toast({
+        title: 'Error',
+        description: 'You cannot remove your own super admin role.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!confirm('Are you sure you want to remove this user\'s super admin role?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('id', roleId);
+
+      if (error) throw error;
+
+      toast({ title: 'Super admin role removed' });
+      fetchData();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to remove super admin.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleEdit = (institution: Institution) => {
     setEditingInstitution(institution);
     setFormData({
@@ -278,6 +410,51 @@ export default function SuperAdmin() {
             <p className="text-muted-foreground">Manage institutions and their administrators.</p>
           </div>
           <div className="flex gap-2">
+            <Dialog open={isSuperAdminDialogOpen} onOpenChange={setIsSuperAdminDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Crown className="h-4 w-4" />
+                  Add Super Admin
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="font-display">Add Super Admin</DialogTitle>
+                  <DialogDescription>
+                    Grant super admin privileges to an existing user.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleAddSuperAdmin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="super_admin_user">Select User</Label>
+                    <select
+                      id="super_admin_user"
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={selectedUserId}
+                      onChange={(e) => setSelectedUserId(e.target.value)}
+                      required
+                    >
+                      <option value="">Select a user...</option>
+                      {allProfiles
+                        .filter(p => !superAdmins.some(sa => sa.user_id === p.user_id))
+                        .map((profile) => (
+                          <option key={profile.user_id} value={profile.user_id}>
+                            {profile.full_name || 'Unnamed User'} ({profile.user_id.slice(0, 8)}...)
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button type="button" variant="outline" onClick={() => setIsSuperAdminDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" className="gradient-primary border-0">
+                      Grant Super Admin
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
             <Dialog open={isAdminDialogOpen} onOpenChange={setIsAdminDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="gap-2">
@@ -465,6 +642,15 @@ export default function SuperAdmin() {
               <div className="text-2xl font-bold font-display">{admins.length}</div>
             </CardContent>
           </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Super Admins</CardTitle>
+              <Crown className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold font-display">{superAdmins.length}</div>
+            </CardContent>
+          </Card>
         </div>
 
         <Tabs defaultValue="institutions" className="space-y-4">
@@ -476,6 +662,10 @@ export default function SuperAdmin() {
             <TabsTrigger value="admins" className="gap-2">
               <Users className="h-4 w-4" />
               Admins
+            </TabsTrigger>
+            <TabsTrigger value="super-admins" className="gap-2">
+              <Crown className="h-4 w-4" />
+              Super Admins
             </TabsTrigger>
           </TabsList>
 
@@ -611,6 +801,71 @@ export default function SuperAdmin() {
                             </TableCell>
                             <TableCell className="font-mono text-sm">
                               {admin.institution_id}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="super-admins">
+            <Card>
+              <CardHeader>
+                <CardTitle>Super Administrators</CardTitle>
+                <CardDescription>Users with full system access across all institutions.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : superAdmins.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Crown className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No super admins assigned yet.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>User</TableHead>
+                          <TableHead>User ID</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {superAdmins.map((sa) => (
+                          <TableRow key={sa.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Shield className="h-4 w-4 text-primary" />
+                                <span className="font-medium">
+                                  {sa.profile?.full_name || 'Unknown User'}
+                                </span>
+                                {sa.user_id === user?.id && (
+                                  <Badge variant="secondary" className="text-xs">You</Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-mono text-sm text-muted-foreground">
+                              {sa.user_id.slice(0, 8)}...
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => handleRemoveSuperAdmin(sa.id, sa.user_id)}
+                                disabled={sa.user_id === user?.id}
+                                title={sa.user_id === user?.id ? "You cannot remove yourself" : "Remove super admin"}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
