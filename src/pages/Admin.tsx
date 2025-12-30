@@ -26,9 +26,19 @@ import {
   XCircle,
   Clock,
   Shield,
-  UserCog
+  UserCog,
+  Building2,
+  ChevronDown
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface IndexRecord {
   id: string;
@@ -60,8 +70,16 @@ interface Member {
 
 type RecordStatus = 'pending' | 'verified' | 'rejected' | 'expired';
 
+interface UserInstitution {
+  institution_id: string;
+  institution_name: string;
+  institution_slug: string;
+  role: string;
+  is_active: boolean;
+}
+
 export default function Admin() {
-  const { user, isAdmin, institutionId, isLoading: authLoading } = useAuth();
+  const { user, isAdmin, institution, institutionId, isLoading: authLoading, refreshAuth } = useAuth();
   const [records, setRecords] = useState<IndexRecord[]>([]);
   const [logs, setLogs] = useState<VerificationLog[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -70,6 +88,8 @@ export default function Admin() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<IndexRecord | null>(null);
   const [isUpdatingRole, setIsUpdatingRole] = useState<string | null>(null);
+  const [userInstitutions, setUserInstitutions] = useState<UserInstitution[]>([]);
+  const [isSwitching, setIsSwitching] = useState(false);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState<{
@@ -91,10 +111,59 @@ export default function Admin() {
   });
 
   useEffect(() => {
+    if (user) {
+      fetchUserInstitutions();
+    }
+  }, [user]);
+
+  useEffect(() => {
     if (isAdmin) {
       fetchData();
     }
-  }, [isAdmin]);
+  }, [isAdmin, institutionId]);
+
+  const fetchUserInstitutions = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase.rpc('get_user_institutions', {
+        _user_id: user.id
+      });
+      if (error) throw error;
+      setUserInstitutions(data || []);
+    } catch (err) {
+      console.error('Error fetching user institutions:', err);
+    }
+  };
+
+  const handleSwitchInstitution = async (instId: string) => {
+    if (!user || instId === institutionId) return;
+    
+    setIsSwitching(true);
+    try {
+      const { error } = await supabase.rpc('switch_active_institution', {
+        _institution_id: instId,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Switched institution',
+        description: 'Now viewing a different institution.',
+      });
+      
+      await refreshAuth();
+      await fetchUserInstitutions();
+    } catch (error: any) {
+      console.error('Switch error:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to switch institution.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSwitching(false);
+    }
+  };
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -365,7 +434,46 @@ export default function Admin() {
       <div className="container py-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="font-display text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="font-display text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+              {userInstitutions.length > 1 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2" disabled={isSwitching}>
+                      {isSwitching ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Building2 className="h-4 w-4" />
+                      )}
+                      {institution?.name || 'Select Institution'}
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-64">
+                    <DropdownMenuLabel>Switch Institution</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {userInstitutions.map((inst) => (
+                      <DropdownMenuItem
+                        key={inst.institution_id}
+                        onClick={() => handleSwitchInstitution(inst.institution_id)}
+                        className={inst.is_active ? 'bg-primary/10' : ''}
+                      >
+                        <div className="flex items-center gap-2 w-full">
+                          <Building2 className="h-4 w-4 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{inst.institution_name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{inst.institution_slug}</p>
+                          </div>
+                          {inst.is_active && (
+                            <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                          )}
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
             <p className="text-muted-foreground">Manage identity records and view verification logs.</p>
           </div>
           <div className="flex gap-2">
