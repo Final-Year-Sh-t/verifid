@@ -148,27 +148,114 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4 overflow-hidden">
       {/* Background shapes */}
       <div 
-        className={`fixed w-[60vw] h-[60vw] max-w-[800px] max-h-[800px] rounded-full bg-primary/20 blur-3xl transition-all duration-700 ease-in-out ${
-          isSignUp ? 'top-[-20%] right-[-10%]' : 'top-[-20%] left-[-10%]'
+        className={`fixed w-[80vw] md:w-[60vw] h-[80vw] md:h-[60vw] max-w-[800px] max-h-[800px] rounded-full bg-primary/20 blur-3xl transition-all duration-700 ease-in-out ${
+          isSignUp ? 'top-[-30%] right-[-20%] md:top-[-20%] md:right-[-10%]' : 'top-[-30%] left-[-20%] md:top-[-20%] md:left-[-10%]'
         }`}
       />
       <div 
-        className={`fixed w-[40vw] h-[40vw] max-w-[500px] max-h-[500px] rounded-full bg-accent/30 blur-3xl transition-all duration-700 ease-in-out ${
-          isSignUp ? 'bottom-[-15%] left-[-5%]' : 'bottom-[-15%] right-[-5%]'
+        className={`fixed w-[60vw] md:w-[40vw] h-[60vw] md:h-[40vw] max-w-[500px] max-h-[500px] rounded-full bg-accent/30 blur-3xl transition-all duration-700 ease-in-out ${
+          isSignUp ? 'bottom-[-20%] left-[-10%] md:bottom-[-15%] md:left-[-5%]' : 'bottom-[-20%] right-[-10%] md:bottom-[-15%] md:right-[-5%]'
         }`}
       />
 
       {/* Back to home link */}
       <Link
         to="/"
-        className="fixed top-6 left-6 inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors z-50"
+        className="fixed top-4 left-4 md:top-6 md:left-6 inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors z-50"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to home
+        <span className="hidden sm:inline">Back to home</span>
       </Link>
 
-      {/* Main container */}
-      <div className="relative w-full max-w-4xl h-[600px] flex rounded-2xl overflow-hidden shadow-2xl border border-border/50 bg-card">
+      {/* Mobile Layout */}
+      <div className="w-full max-w-md md:hidden">
+        <div className="bg-card rounded-2xl shadow-2xl border border-border/50 overflow-hidden">
+          {/* Header with gradient */}
+          <div className="gradient-primary p-6 text-center">
+            <Shield className="w-12 h-12 mx-auto mb-3 text-primary-foreground" />
+            <h1 className="text-2xl font-display font-bold text-primary-foreground">
+              {isSignUp ? 'Create Account' : 'Welcome Back'}
+            </h1>
+            <p className="text-primary-foreground/80 text-sm mt-1">
+              {isSignUp ? 'Sign up to get started' : 'Sign in to continue'}
+            </p>
+          </div>
+
+          {/* Form */}
+          <div className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {isSignUp && (
+                <FloatingInput
+                  id="mobile-fullName"
+                  name="fullName"
+                  type="text"
+                  label="Full Name"
+                  icon={<User className="h-5 w-5" />}
+                  value={formData.fullName}
+                  onChange={handleInputChange}
+                  error={errors.fullName}
+                />
+              )}
+              <FloatingInput
+                id="mobile-email"
+                name="email"
+                type="email"
+                label="Email"
+                icon={<Mail className="h-5 w-5" />}
+                value={formData.email}
+                onChange={handleInputChange}
+                error={errors.email}
+              />
+              <FloatingInput
+                id="mobile-password"
+                name="password"
+                type="password"
+                label="Password"
+                icon={<Lock className="h-5 w-5" />}
+                value={formData.password}
+                onChange={handleInputChange}
+                error={errors.password}
+              />
+              {isSignUp && (
+                <FloatingInput
+                  id="mobile-confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  label="Confirm Password"
+                  icon={<Lock className="h-5 w-5" />}
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  error={errors.confirmPassword}
+                />
+              )}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3 gradient-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    {isSignUp ? 'Creating account...' : 'Signing in...'}
+                  </>
+                ) : (
+                  isSignUp ? 'Register' : 'Login'
+                )}
+              </button>
+            </form>
+
+            <p className="mt-6 text-center text-muted-foreground text-sm">
+              {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+              <button onClick={toggleMode} className="text-primary font-medium hover:underline">
+                {isSignUp ? 'Sign In' : 'Sign Up'}
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop/Tablet Layout */}
+      <div className="hidden md:block relative w-full max-w-4xl h-[600px] rounded-2xl overflow-hidden shadow-2xl border border-border/50 bg-card">
         
         {/* Welcome Section - slides left/right */}
         <div 
@@ -235,12 +322,6 @@ export default function Auth() {
                 )}
               </button>
             </form>
-            <p className="mt-6 text-center text-muted-foreground md:hidden">
-              Don't have an account?{' '}
-              <button onClick={toggleMode} className="text-primary font-medium hover:underline">
-                Sign Up
-              </button>
-            </p>
           </div>
         </div>
 
@@ -308,12 +389,6 @@ export default function Auth() {
                 )}
               </button>
             </form>
-            <p className="mt-6 text-center text-muted-foreground md:hidden">
-              Already have an account?{' '}
-              <button onClick={toggleMode} className="text-primary font-medium hover:underline">
-                Sign In
-              </button>
-            </p>
           </div>
         </div>
       </div>
