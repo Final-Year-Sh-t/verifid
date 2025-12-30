@@ -16,7 +16,7 @@ export function Navbar() {
   };
 
   const navLinks = [
-    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, requiresAuth: true },
+    { to: '/dashboard', label: 'Home', icon: LayoutDashboard, requiresAuth: true },
     { to: '/verify', label: 'Verify', icon: Search, requiresAuth: true },
     { to: '/docs', label: 'Documentation', icon: FileText, requiresAuth: false },
     ...(isAdmin ? [
