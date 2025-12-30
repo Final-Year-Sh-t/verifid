@@ -634,54 +634,65 @@ export default function Dashboard() {
           <div className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-display text-lg font-semibold">Institution</h2>
-              {userInstitutions.length > 0 && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2" disabled={isSwitching}>
-                      {isSwitching ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Building2 className="h-4 w-4" />
-                      )}
-                      <span className="hidden sm:inline">{institution?.name || 'Select'}</span>
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-64">
-                    <DropdownMenuLabel>Your Institutions</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {userInstitutions.map((inst) => (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2" disabled={isSwitching}>
+                    {isSwitching ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                    <span className="hidden sm:inline">Switch</span>
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-72 bg-popover border border-border shadow-lg">
+                  <DropdownMenuLabel className="text-xs text-muted-foreground">
+                    Your Institutions ({userInstitutions.length})
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {userInstitutions.length === 0 ? (
+                    <div className="px-2 py-3 text-sm text-muted-foreground text-center">
+                      No other institutions
+                    </div>
+                  ) : (
+                    userInstitutions.map((inst) => (
                       <DropdownMenuItem
                         key={inst.institution_id}
                         onClick={() => !inst.is_active && handleSwitchInstitution(inst.institution_id)}
-                        className={inst.is_active ? 'bg-primary/10' : 'cursor-pointer'}
+                        className={`cursor-pointer ${inst.is_active ? 'bg-primary/10 border-l-2 border-primary' : 'hover:bg-muted'}`}
                       >
-                        <div className="flex items-center gap-2 w-full">
-                          <Building2 className="h-4 w-4 shrink-0" />
+                        <div className="flex items-center gap-3 w-full py-1">
+                          <div className={`flex h-8 w-8 items-center justify-center rounded-lg shrink-0 ${inst.is_active ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                            <Building2 className="h-4 w-4" />
+                          </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm truncate">{inst.institution_name}</p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
                               <span className="capitalize">{inst.role}</span>
+                              {inst.is_active && <span className="text-primary">• Active</span>}
                             </p>
                           </div>
-                          {inst.is_active && (
+                          {inst.is_active ? (
                             <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                          ) : (
+                            <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
                           )}
                         </div>
                       </DropdownMenuItem>
-                    ))}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handleOpenSwitchModal('join')}>
-                      <Users className="h-4 w-4 mr-2" />
-                      Join Another
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleOpenSwitchModal('create')}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create New
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+                    ))
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleOpenSwitchModal('join')} className="cursor-pointer">
+                    <Users className="h-4 w-4 mr-2" />
+                    Join Existing Institution
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleOpenSwitchModal('create')} className="cursor-pointer">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create New Institution
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <div className="space-y-3">
               {/* Current Institution */}
