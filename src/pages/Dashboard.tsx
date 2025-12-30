@@ -20,8 +20,26 @@ import {
   Settings,
   FileText,
   Building2,
-  Plus
+  Plus,
+  RefreshCw
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface DashboardStats {
   totalVerifications: number;
@@ -50,6 +68,11 @@ export default function Dashboard() {
   const [joinCode, setJoinCode] = useState('');
   const [searchResults, setSearchResults] = useState<Array<{ id: string; name: string; slug: string }>>([]);
   const [selectedInstitution, setSelectedInstitution] = useState<string | null>(null);
+  
+  // Institution switching modal state
+  const [showInstitutionModal, setShowInstitutionModal] = useState(false);
+  const [showConfirmSwitch, setShowConfirmSwitch] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'create' | 'join' | null>(null);
 
   useEffect(() => {
     if (user && institutionId) {
@@ -119,6 +142,7 @@ export default function Dashboard() {
       await refreshAuth();
       setInstitutionName('');
       setOnboardingStep('choice');
+      setShowInstitutionModal(false);
 
       // If something is still off, keep a visible hint in console
       if (!newInstitutionId) {
@@ -189,6 +213,7 @@ export default function Dashboard() {
       setSearchResults([]);
       setSelectedInstitution(null);
       setOnboardingStep('choice');
+      setShowInstitutionModal(false);
     } catch (error: any) {
       console.error('Join error:', error);
       toast({
@@ -251,6 +276,34 @@ export default function Dashboard() {
   };
 
   const firstName = user.user_metadata?.full_name?.split(' ')[0] || 'there';
+
+  const handleOpenSwitchModal = (action: 'create' | 'join') => {
+    if (institutionId) {
+      setPendingAction(action);
+      setShowConfirmSwitch(true);
+    } else {
+      setOnboardingStep(action);
+      setShowInstitutionModal(true);
+    }
+  };
+
+  const handleConfirmSwitch = () => {
+    setShowConfirmSwitch(false);
+    if (pendingAction) {
+      setOnboardingStep(pendingAction);
+      setShowInstitutionModal(true);
+      setPendingAction(null);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowInstitutionModal(false);
+    setOnboardingStep('choice');
+    setJoinCode('');
+    setSearchResults([]);
+    setSelectedInstitution(null);
+    setInstitutionName('');
+  };
 
   // Show onboarding if user has no institution
   if (!institutionId) {
@@ -508,6 +561,46 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Institution Management */}
+          <div className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
+            <h2 className="font-display text-lg font-semibold mb-4">Institution</h2>
+            <Card>
+              <CardContent className="p-4 md:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+                      <Building2 className="h-5 w-5 md:h-6 md:w-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{institution?.name || 'Unknown'}</h3>
+                      <p className="text-xs text-muted-foreground font-mono">{institution?.slug || ''}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenSwitchModal('join')}
+                      className="gap-1.5"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      Switch
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenSwitchModal('create')}
+                      className="gap-1.5"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Create New
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Recent Activity */}
           <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
             <div className="flex items-center justify-between mb-4">
@@ -584,6 +677,206 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={showConfirmSwitch} onOpenChange={setShowConfirmSwitch}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Switch Institution?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will leave your current institution ({institution?.name}). 
+              {pendingAction === 'create' 
+                ? ' You will become the admin of your new institution.'
+                : ' You will join as a regular member of the new institution.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSwitch}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Institution Modal */}
+      <Dialog open={showInstitutionModal} onOpenChange={(open) => !open && handleCloseModal()}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {onboardingStep === 'choice' && 'Manage Institution'}
+              {onboardingStep === 'create' && 'Create New Institution'}
+              {onboardingStep === 'join' && 'Join Institution'}
+            </DialogTitle>
+            <DialogDescription>
+              {onboardingStep === 'choice' && 'Create a new institution or join an existing one'}
+              {onboardingStep === 'create' && 'Set up your own verification portal'}
+              {onboardingStep === 'join' && 'Search and join an existing institution'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {onboardingStep === 'choice' && (
+            <div className="grid gap-3 pt-2">
+              <Card 
+                className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50 group"
+                onClick={() => setOnboardingStep('create')}
+              >
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                    <Plus className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-sm">Create Institution</h3>
+                    <p className="text-xs text-muted-foreground">Start fresh with your own portal</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </CardContent>
+              </Card>
+
+              <Card 
+                className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50 group"
+                onClick={() => setOnboardingStep('join')}
+              >
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-foreground shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                    <Users className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-sm">Join Institution</h3>
+                    <p className="text-xs text-muted-foreground">Connect with an existing one</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {onboardingStep === 'create' && (
+            <form onSubmit={handleCreateInstitution} className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label htmlFor="modalInstitutionName" className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  Institution Name
+                </Label>
+                <Input
+                  id="modalInstitutionName"
+                  placeholder="Acme University"
+                  value={institutionName}
+                  onChange={(e) => setInstitutionName(e.target.value)}
+                  disabled={isOnboardingLoading}
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOnboardingStep('choice')}
+                  disabled={isOnboardingLoading}
+                  className="flex-1"
+                >
+                  Back
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  disabled={isOnboardingLoading || !institutionName.trim()}
+                >
+                  {isOnboardingLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Institution'
+                  )}
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {onboardingStep === 'join' && (
+            <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label htmlFor="modalJoinCode" className="flex items-center gap-2">
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                  Search by Name or Code
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="modalJoinCode"
+                    placeholder="Institution name or code..."
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value)}
+                    disabled={isOnboardingLoading}
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleSearchInstitutions}
+                    disabled={isOnboardingLoading || !joinCode.trim()}
+                    variant="secondary"
+                  >
+                    {isOnboardingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Search'}
+                  </Button>
+                </div>
+              </div>
+
+              {searchResults.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Select Institution</Label>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {searchResults.map((inst) => (
+                      <div
+                        key={inst.id}
+                        onClick={() => setSelectedInstitution(inst.id)}
+                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                          selectedInstitution === inst.id
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <div className="font-medium text-sm">{inst.name}</div>
+                        <div className="text-xs text-muted-foreground font-mono">{inst.slug}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setOnboardingStep('choice');
+                    setSearchResults([]);
+                    setSelectedInstitution(null);
+                  }}
+                  disabled={isOnboardingLoading}
+                  className="flex-1"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={handleJoinInstitution}
+                  className="flex-1"
+                  disabled={isOnboardingLoading || !selectedInstitution}
+                >
+                  {isOnboardingLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Joining...
+                    </>
+                  ) : (
+                    'Join Institution'
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
