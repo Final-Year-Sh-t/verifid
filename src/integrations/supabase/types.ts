@@ -275,7 +275,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user" | "super_admin"
       staff_role: "verifier" | "registrar" | "security" | "viewer"
-      verification_status: "pending" | "verified" | "rejected" | "expired"
+      verification_status: "active" | "inactive" | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -405,7 +405,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user", "super_admin"],
       staff_role: ["verifier", "registrar", "security", "viewer"],
-      verification_status: ["pending", "verified", "rejected", "expired"],
+      verification_status: ["active", "inactive", "expired"],
     },
   },
 } as const
