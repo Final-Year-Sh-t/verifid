@@ -270,7 +270,7 @@ export function BulkUpload({ institutionId, userId, onComplete }: BulkUploadProp
           photo_url: record.photo_url || null,
           status: (['pending', 'verified', 'rejected', 'expired'].includes(record.status || '') 
             ? record.status 
-            : 'pending') as 'pending' | 'verified' | 'rejected' | 'expired',
+            : 'verified') as 'pending' | 'verified' | 'rejected' | 'expired',
           created_by: userId,
           institution_id: institutionId,
         };
