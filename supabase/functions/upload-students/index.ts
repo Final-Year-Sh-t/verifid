@@ -117,7 +117,7 @@ serve(async (req: Request): Promise<Response> => {
       const validStatuses = ["pending", "verified", "rejected", "expired"];
       const status = record.status && validStatuses.includes(record.status) 
         ? record.status 
-        : "pending";
+        : "verified";
 
       validRecords.push({
         index_number: record.index_number.trim().toUpperCase(),
