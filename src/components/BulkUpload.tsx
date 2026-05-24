@@ -311,8 +311,8 @@ export function BulkUpload({ institutionId, userId, onComplete }: BulkUploadProp
     const headers = [...REQUIRED_COLUMNS, ...OPTIONAL_COLUMNS];
     const sampleData = [
       headers.join(','),
-      'ID-2024-001,John Doe,Engineering Department,2024-01-01,2025-12-31,,verified',
-      'ID-2024-002,Jane Smith,Science Department,2024-01-01,2025-12-31,,pending',
+      'ID-2024-001,John Doe,Engineering Department,2024-01-01,2025-12-31,,active',
+      'ID-2024-002,Jane Smith,Science Department,2024-01-01,2025-12-31,,inactive',
     ].join('\n');
 
     const blob = new Blob([sampleData], { type: 'text/csv' });

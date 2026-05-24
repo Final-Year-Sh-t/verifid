@@ -169,7 +169,7 @@ const faqs = [
   },
   {
     question: 'What if I can\'t find a record?',
-    answer: 'If a record isn\'t found, it could mean: the identification number is incorrect, the record doesn\'t exist in the system, or the record status is not "verified". Double-check the identification number and try again.',
+    answer: 'If a record isn\'t found, it could mean: the identification number is incorrect, the record doesn\'t exist in the system, or the record status is not "active". Double-check the identification number and try again.',
   },
   {
     question: 'How long are records valid?',
