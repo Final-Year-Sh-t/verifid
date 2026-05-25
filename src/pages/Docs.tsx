@@ -60,7 +60,7 @@ If you've forgotten your password, contact your system administrator.`
 3. Click "Verify" to search
 
 The system will display the verification result:
-- **Found**: The identity is verified with full details including name, photo, organization, and validity dates
+- Found: The identity is verified with full details including name, photo, organization, and validity dates
 - **Not Found**: No record matches the identification number
 
 All verification attempts are logged for audit purposes.`
